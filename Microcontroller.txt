@@ -1,0 +1,202 @@
+//LCD module connections 
+sbit LCD_RS at RD0_bit; 
+sbit LCD_EN at RD3_bit; 
+sbit LCD_D4 at RD4_bit; 
+sbit LCD_D5 at RD5_bit; 
+sbit LCD_D6 at RD6_bit; 
+sbit LCD_D7 at RD7_bit; 
+sbit LCD_RS_Direction at TRISD0_bit; 
+sbit LCD_EN_Direction at TRISD3_bit; 
+sbit LCD_D4_Direction at TRISD4_bit; 
+sbit LCD_D5_Direction at TRISD5_bit; 
+sbit LCD_D6_Direction at TRISD6_bit; 
+sbit LCD_D7_Direction at TRISD7_bit; 
+// End LCD module connections
+#define Enter 0x0C// here it is the key "=" on keypad
+#define Plus 0x0F// The "+" key
+#define Minus 0x0E // The "-" key
+#define Multiply 0x0B // The "*" key 
+#define Divide 0x0D // The "/" 
+unsigned key [17]={0,0x00,0x01,0x04,0x07,0x0A,0x02, 
+0x05,0x08,0x0C,0x03,0x06,0x09,0x0F,0x0E,0x0B,0x0D}; 
+char keypadPort at PORTB;
+unsigned char MyKey, i,j,op[12],no1[12],ke[12],lcd[6],opd;
+unsigned long Op1,opn,no,op2,calc,nos[6];
+ int po,eo,co; int check(); 
+void read(); 
+void main() { ADCON1=0x06; TRISA=0x00; 
+TRISB=0x00; 
+TRISC=0x1F; 
+TRISD=0x00; 
+LATA=0x00; 
+LATC=0x00; 
+Lcd_Init(); 
+Keypad_Init(); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Cmd(_LCD_CURSOR_OFF); 
+Lcd_Out(1,1,"ABACUS"); 
+// Display CALCULATOR Delay_ms(2000); 
+//////////////////// INITIAL CHECKING /////////////////////////////////////////// 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"FUNCTIONAL CHECK"); 
+// Display CALCULATOR Delay_ms(2000); 
+while(1) 
+{
+no=0;
+read(); 
+Lcd_Cmd(_Lcd_CLEAR); 
+if(no!=0) { LATC.F6=1;LATC.F7=0;
+Lcd_Out(1,1,"error...");
+no=0; } 
+else { LATC.F6=0;LATC.F7=1; Lcd_Out(1,1,"check complete..");
+break; } 
+delay_ms(2000); LATC.F6=0;LATC.F7=0; } 
+delay_ms(2000); 
+LATC.F6=0;
+LATC.F7=0; 
+Lcd_Cmd(_Lcd_CLEAR); 
+/////////////////////////////////////////////////////////////////////// 
+Lcd_Out(1,1,"1-COUNT"); 
+Lcd_Out(2,1,"2-SOLVE "); 
+do 
+// Get first number MyKey = key[Keypad_Key_Click()]; 
+while(!MyKey); 
+Lcd_Cmd(_Lcd_CLEAR); 
+if(MyKey==0x02) { Lcd_Out(1,1,"CALCULATOR");
+delay_ms(1000);
+while(1)
+{ MyKey = 0; calc=0; for(i=0;i<=11;i++) { op[i]=' ';no1[i]=' ';ke[i]=' '; } Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"NO OF OPERANDS:"); 
+do // Get first number MyKey = key[Keypad_Key_Click()]; 
+while(!MyKey); delay_ms(100); 
+Lcd_Chr(2,1,MyKey + '0'); 
+delay_ms(1000); po= MyKey ; 
+MyKey =0; 
+for(i=0;i<=5;i++) { nos[i]=0; } Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"Q:"); 
+while(1)
+{
+do 
+// Get first number MyKey = key[Keypad_Key_Click()]; 
+while(!MyKey); 
+delay_ms(100); 
+if((MyKey == Plus)|(MyKey == Minus)|(MyKey ==Multiply)|(MyKey ==Divide)) break; 
+// If ENTER pressed if(MyKey == 10) MyKey = 0; 
+// If 0 key pressed Lcd_Chr_Cp(MyKey + '0'); 
+nos[po] = 10*nos[po] + MyKey; } calc=nos[po]; 
+po--; while(po>=1) { opd= MyKey; switch(MyKey) 
+// Perform the operation { case Plus: Lcd_Chr_Cp('+'); 
+// If ADD break; case Minus: Lcd_Chr_Cp('-'); 
+// If Subtract break;
+case Multiply: Lcd_Chr_Cp('*'); 
+// If Multiply break; 
+case Divide: Lcd_Chr_Cp('/'); 
+// If Divide break; } 
+while(1) 
+// Get second no { do MyKey = key[Keypad_Key_Click()]; 
+// Get second number while(!MyKey); 
+delay_ms(100); 
+if((MyKey == Enter)|(MyKey == Plus)|(MyKey == Minus)|(MyKey ==Multiply)|(MyKey ==Divide)) break; 
+// If ENTER pressed if(MyKey == 10)MyKey = 0; 
+// If 0 key pressed Lcd_Chr_Cp(MyKey + '0'); 
+nos[po] = 10*nos[po] + MyKey; } po--; switch(opd) 
+// Perform the operation { case Plus: Calc = calc + nos[po+1]; 
+// If ADD break; 
+case Minus:
+Calc = calc - nos[po+1]; 
+// If Subtract break; 
+case Multiply: Calc = calc * nos[po+1]; 
+// If Multiply break; case Divide: Calc = calc / nos[po+1]; 
+// If Divide break; } } 
+Lcd_Chr_Cp('='); 
+Lcd_Out(2,1,"A:"); 
+LongToStr(calc, op); 
+Op1=0; MyKey=0; 
+while(1) 
+//Get second no { do MyKey = key[Keypad_Key_Click()]; 
+// Get second number while(!MyKey); delay_ms(100); 
+if((MyKey == Enter)) break; 
+// If ENTER pressed if(MyKey == 10) MyKey = 0; 
+// If 0 key pressed Lcd_Chr_Cp(MyKey + '0'); 
+op1 = 10*op1 + MyKey; }
+opn=op1;
+read(); 
+po=0; 
+for(i=0;i<=11;i++) { if((op[i]!=no1[i])|(ke[i]!=no1[i])) { po=1; } } 
+if(po==0) { LATC.F6=0;LATC.F7=1;Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"CONGRATULATIONS"); 
+Delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR); 
+Delay_ms(1000); 
+Lcd_Out(1,1,"CONGRATULATIONS"); 
+Delay_ms(1000); Lcd_Cmd(_LCD_CLEAR); } 
+else { LATC.F6=1;LATC.F7=0; Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"correct answer:"); 
+Lcd_Out(2,1,op); 
+Delay_ms(1500);
+Lcd_Cmd(_LCD_CLEAR);
+Lcd_Out(1,1,"you entered:"); 
+Lcd_Out(2,1,ke); 
+Delay_ms(1500); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"abacus answer:"); 
+Lcd_Out(2,1,no1); 
+Delay_ms(1500); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"REDO"); 
+Delay_ms(2000); 
+Lcd_Cmd(_LCD_CLEAR); } 
+LATC.F6=0;LATC.F7=0; 
+Delay_ms(2000); 
+co=100; 
+do { co--; Delay_ms(100); 
+if(PORTC.F5==1) goto C; } 
+while((co>0)); 
+}
+ }
+///////////////////////////////////////////////////////////////////////
+else { Lcd_Out(1,1,"COUNTING"); 
+delay_ms(1000); 
+while(1) { MyKey = 0; calc=0; 
+for(i=0;i<=11;i++) { ke[i]=' ';no1[i]=' '; } 
+delay_ms(100); 
+Lcd_Out(1,1,"INCREMENT:"); 
+do MyKey = key[Keypad_Key_Click()]; 
+// Get second number while(!MyKey); 
+delay_ms(100); 
+Lcd_Chr_Cp(MyKey + '0'); 
+delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"MOVE THE BEADS "); 
+delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"ACCORDING TO THE "); 
+delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR);
+Lcd_Out(1,1,"NO. DISPLAYED IN ");
+delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"THE FIRST ROW...."); 
+delay_ms(1000); 
+Lcd_Cmd(_LCD_CLEAR); 
+Lcd_Out(1,1,"COUNTING FROM."); 
+Lcd_Chr_Cp('0'); 
+delay_ms(2000); 
+Lcd_Cmd(_LCD_CLEAR); 
+op1=0; 
+while(1) 
+{ while(1) 
+{ opn=op1; read(); 
+Lcd_Out(1,1,"COUNT:"); 
+j=0; 
+for(i=0;i<=11;i++) { if(ke[i] != ' ') 
+// If a blank { lcd[j]=ke[i]; j++; } } Lcd_Out_Cp(lcd); 
+// Display result Lcd_Out(2,1,"ABACUS:");
+j=0;
+for(i=0;i<=11;i++) { if(no1[i] != ' ') // If a blank { lcd[j]=no1[i]; j++; } } Lcd_Out_Cp(lcd); // Display result Delay_ms(1500); eo=0; for(i=0;i<=11;i++) { if((ke[i]!=no1[i])) { eo=1; } } if(eo==0) { LATC.F6=0;LATC.F7=1;Delay_ms(1000); LATC.F6=0; LATC.F7=0; goto A; } else {
+PORTC.F6=1;PORTC.F7=0;
+Delay_ms(1000); LATC.F6=0; LATC.F7=0; } } A:Lcd_Cmd(_LCD_CLEAR); Lcd_Out(1,1,"CORRECT"); Delay_ms(2000); Lcd_Cmd(_LCD_CLEAR); LATC.F6=0; LATC.F7=0; Op1=op1+MyKey; } } } } //////////////////////////////////////////////////////////////////////////////// int check() { int b; if((PORTC==0x00)|(PORTC==0x01)|(PORTC==0x02)|(PORTC==0x03)|(PORTC==0x04)|(PORTC==0x05)|(PORTC==0x06)|(PORTC==0x07)) b= 0;
+else if((PORTC==0x08)|(PORTC==0x09)|(PORTC==0x0A)|(PORTC==0x0B)) b=1; else if((PORTC==0x0C)|(PORTC==0x0D)) b= 2; else if(PORTC==0x0E) b= 3; else if(PORTC==0x0F) b=4; else if((PORTC==0x10)|(PORTC==0x11)|(PORTC==0x12)|(PORTC==0x13)|(PORTC==0x14)|(PORTC==0x15)|(PORTC==0x16)|(PORTC==0x17)) b=5; else if((PORTC==0x18)|(PORTC==0x19)|(PORTC==0x1A)|(PORTC==0x1B)) b=6; else if((PORTC==0x1C)|(PORTC==0x1D)) b=7; else if(PORTC==0x1E) b=8; else if(PORTC==0x1F) b=9; return b; } //////////////////////////////////////////////////////////////////////////// void read() { no=0;
+LATA.F0=1; delay_us(500); no=check(); LATA.F0=0; delay_us(500); LATA.F1=1; delay_us(500); no=no*10+check(); LATA.F1=0; delay_us(500); LATA.F2=1; delay_us(500); no=no*10+check(); LATA.F2=0; delay_us(500); LATA.F3=1; delay_us(500); no=no*10+check(); LATA.F3=0; delay_us(500); LATA.F5=1; delay_us(500); no=no*10+check(); LATA.F5=0; delay_us(500);
+LongToStr(no, no1);
+LongToStr(opn, ke); return; } /////////////////////////////////////////////////////////////////////////////////
